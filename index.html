@@ -460,9 +460,12 @@ async function cargarGastos() {
     gastos = data || [];
     populateActividadFilter();
   } catch(e) {
-    showToast('Error al cargar datos: ' + e.message, 'error');
+    showToast('Error al conectar con la base de datos. Hacé click en Actualizar para reintentar.', 'error');
+    console.error('Supabase error:', e);
   }
   hideLoading();
+  // Always render dash even if empty so resumen anual shows
+  renderResumen();
 }
 
 async function insertarGasto(g) {
@@ -724,16 +727,23 @@ function renderResumen(){
   const wrap = document.getElementById('resumen-table-wrap');
   if(!wrap) return;
 
-  // Obtener todos los meses con datos
-  const mesesConDatos = [...new Set(gastos.map(g=>getMes(g.fecha)))].filter(Boolean).sort();
-  if(!mesesConDatos.length){
-    wrap.innerHTML='<div class="empty-state" style="padding:1.5rem">Sin datos registrados aún</div>';
-    return;
+  // Siempre mostrar todos los meses del año actual (junio en adelante)
+  const hoy = new Date();
+  const anio = hoy.getFullYear();
+  const mesActual = hoy.getMonth(); // 0-based
+
+  // Mostrar desde Junio (mes 5) hasta el mes actual del año
+  const meses = [];
+  for(let m = 5; m <= mesActual; m++){
+    const mm = String(m+1).padStart(2,'0');
+    meses.push(`${anio}-${mm}`);
   }
+  // Si estamos antes de junio, igual mostrar junio solo
+  if(meses.length === 0) meses.push(`${anio}-06`);
 
   // Calcular gastos por mes
   const gastosPorMes = {};
-  mesesConDatos.forEach(m=>{
+  meses.forEach(m=>{
     gastosPorMes[m] = gastos.filter(g=>getMes(g.fecha)===m).reduce((s,g)=>s+Number(g.monto),0);
   });
 
@@ -744,22 +754,39 @@ function renderResumen(){
   let filaDif    = '<tr class="row-dif"><td>Diferencia</td>';
   let filaAcum   = '<tr class="row-acum"><td>Acumulado</td>';
   let headers    = '<th>Concepto</th>';
+  let totalGasto = 0;
+  let totalDif   = 0;
 
-  mesesConDatos.forEach(m=>{
+  meses.forEach(m=>{
     const [y,mo] = m.split('-');
-    const nombre = MESES_NOMBRES[parseInt(mo)-1]+' '+y;
+    const nombre = MESES_NOMBRES[parseInt(mo)-1];
     const gasto = gastosPorMes[m] || 0;
     const dif = presupuesto - gasto;
     acumulado += dif;
+    totalGasto += gasto;
+    totalDif += dif;
     const classDif = dif >= 0 ? 'pos' : 'neg';
     const classAcum = acumulado >= 0 ? 'pos' : 'neg';
+    const esActual = m === getMes(hoy.toISOString().split('T')[0]);
 
-    headers    += `<th>${nombre}</th>`;
+    headers    += `<th style="${esActual?'color:var(--accent)':''}">${nombre}${esActual?' ●':''}</th>`;
     filaPresup += `<td>$${fmt(presupuesto)}</td>`;
-    filaGastos += `<td>$${fmt(gasto)}</td>`;
-    filaDif    += `<td class="${classDif}">${dif>=0?'':'- '}$${fmt(Math.abs(dif))}</td>`;
-    filaAcum   += `<td class="${classAcum}">${acumulado>=0?'':'- '}$${fmt(Math.abs(acumulado))}</td>`;
+    filaGastos += `<td style="${gasto>0?'color:var(--text)':'color:var(--muted)'}">$${fmt(gasto)}</td>`;
+    filaDif    += `<td class="${classDif}">${dif>=0?'+':'-'} $${fmt(Math.abs(dif))}</td>`;
+    filaAcum   += `<td class="${classAcum}">${acumulado>=0?'+':'-'} $${fmt(Math.abs(acumulado))}</td>`;
   });
+
+  // Columna TOTAL si hay más de un mes
+  if(meses.length > 1){
+    const totalPresup = presupuesto * meses.length;
+    const classTotalDif = totalDif >= 0 ? 'pos' : 'neg';
+    const classTotalAcum = acumulado >= 0 ? 'pos' : 'neg';
+    headers    += '<th style="color:var(--accent);border-left:1px solid var(--border)">TOTAL</th>';
+    filaPresup += `<td style="border-left:1px solid var(--border);font-weight:700">$${fmt(totalPresup)}</td>`;
+    filaGastos += `<td style="border-left:1px solid var(--border);font-weight:700">$${fmt(totalGasto)}</td>`;
+    filaDif    += `<td class="${classTotalDif}" style="border-left:1px solid var(--border);font-weight:700">${totalDif>=0?'+':'-'} $${fmt(Math.abs(totalDif))}</td>`;
+    filaAcum   += `<td class="${classTotalAcum}" style="border-left:1px solid var(--border);font-weight:700">${acumulado>=0?'+':'-'} $${fmt(Math.abs(acumulado))}</td>`;
+  }
 
   headers    += '</tr>';
   filaPresup += '</tr>';
