@@ -255,6 +255,7 @@ tr:last-child td{border-bottom:none;}
           <option>Alliance Ctes.</option><option>Scudria Ctes</option><option>Scuderia R.</option>
           <option>Royal Ctes</option><option>Royal R.</option><option>Benelli</option>
           <option>MG</option><option>Kia</option>
+          <option>Mantenimiento</option>
         </select>
       </div>
     </div>
@@ -317,6 +318,7 @@ tr:last-child td{border-bottom:none;}
         <option>Alliance Ctes.</option><option>Scudria Ctes</option><option>Scuderia R.</option>
         <option>Royal Ctes</option><option>Royal R.</option><option>Benelli</option>
         <option>MG</option><option>Kia</option>
+        <option>Mantenimiento</option>
       </select>
       <select id="f-actividad" onchange="renderDash()">
         <option value="">Todas las actividades</option>
@@ -403,6 +405,7 @@ tr:last-child td{border-bottom:none;}
         <option>Alliance Ctes.</option><option>Scudria Ctes</option><option>Scuderia R.</option>
         <option>Royal Ctes</option><option>Royal R.</option><option>Benelli</option>
         <option>MG</option><option>Kia</option>
+        <option>Mantenimiento</option>
       </select>
       <button class="btn-sec" onclick="recargarDatos()">↻ Actualizar</button>
       <button class="btn-sec" onclick="selectAll()">Sel. todo</button>
@@ -426,7 +429,7 @@ const SUPABASE_URL = 'https://gushbriobxwuwrepbbin.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_2uNKW5NuJAkX1gux89I52Q_iqtphgWp';
 const CLOUD_NAME  = 'dluobueeg';
 const UPLOAD_PRESET = 'ml_default';
-const SUCURSALES = ['Meucci','MM Ruta 11','MM Juan b Justo','MM Barranqueras','MM Italia','MM 3 de Abril','Dallas R.','Dallas Ctes','Alliance R.','Alliance Ctes.','Scudria Ctes','Scuderia R.','Royal Ctes','Royal R.','Benelli','MG','Kia'];
+const SUCURSALES = ['Meucci','MM Ruta 11','MM Juan b Justo','MM Barranqueras','MM Italia','MM 3 de Abril','Dallas R.','Dallas Ctes','Alliance R.','Alliance Ctes.','Scudria Ctes','Scuderia R.','Royal Ctes','Royal R.','Benelli','MG','Kia','Mantenimiento'];
 
 let gastos = [];
 let splitMode = false;
