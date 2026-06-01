@@ -727,24 +727,34 @@ function renderResumen(){
   const wrap = document.getElementById('resumen-table-wrap');
   if(!wrap) return;
 
-  // Siempre mostrar todos los meses del año actual (junio en adelante)
   const hoy = new Date();
   const anio = hoy.getFullYear();
   const mesActual = hoy.getMonth(); // 0-based
 
-  // Mostrar desde Junio (mes 5) hasta el mes actual del año
+  // Datos históricos fijos (Enero-Mayo 2026)
+  const historicos = {
+    '2026-01': 9691798.60,
+    '2026-02': 6404939.55,
+    '2026-03': 8636368.26,
+    '2026-04': 11814368.79,
+    '2026-05': 6450208.22
+  };
+
+  // Todos los meses del año hasta el actual
   const meses = [];
-  for(let m = 5; m <= mesActual; m++){
+  for(let m = 0; m <= mesActual; m++){
     const mm = String(m+1).padStart(2,'0');
     meses.push(`${anio}-${mm}`);
   }
-  // Si estamos antes de junio, igual mostrar junio solo
-  if(meses.length === 0) meses.push(`${anio}-06`);
 
-  // Calcular gastos por mes
+  // Gastos: histórico fijo para Ene-May, real de la app para Jun en adelante
   const gastosPorMes = {};
   meses.forEach(m=>{
-    gastosPorMes[m] = gastos.filter(g=>getMes(g.fecha)===m).reduce((s,g)=>s+Number(g.monto),0);
+    if(historicos[m] !== undefined){
+      gastosPorMes[m] = historicos[m];
+    } else {
+      gastosPorMes[m] = gastos.filter(g=>getMes(g.fecha)===m).reduce((s,g)=>s+Number(g.monto),0);
+    }
   });
 
   // Construir tabla
