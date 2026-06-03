@@ -48,9 +48,12 @@ select option{background:var(--surface2);}
 .remaining-badge{font-family:'DM Mono',monospace;font-size:0.82rem;padding:0.22rem 0.7rem;border-radius:20px;background:var(--surface);border:1px solid var(--border);}
 .remaining-badge.ok{color:var(--green);border-color:var(--green);}
 .remaining-badge.over{color:var(--red);border-color:var(--red);}
-.split-row{display:grid;grid-template-columns:1fr 140px 36px;gap:0.5rem;align-items:center;margin-bottom:0.7rem;row-gap:0.4rem;}
+.split-row{display:grid;grid-template-columns:1fr 90px 130px 36px;gap:0.5rem;align-items:center;margin-bottom:0.7rem;row-gap:0.4rem;}
 .split-row select{grid-column:1/-1;}
-@media(max-width:520px){.split-row{grid-template-columns:1fr 36px;}.split-row select{grid-column:1/-1;}.split-row .split-monto-wrap{grid-column:1;}.split-row .remove-btn{grid-column:2;grid-row:2;align-self:center;}}
+.split-pct-wrap{position:relative;}
+.split-pct-wrap .pct-sign{position:absolute;right:0.7rem;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600;font-size:0.85rem;pointer-events:none;}
+.split-pct-wrap input{padding-right:1.6rem;text-align:right;}
+@media(max-width:520px){.split-row{grid-template-columns:1fr 36px;row-gap:0.4rem;}.split-row select{grid-column:1/-1;}.split-row .split-pct-wrap{grid-column:1;}.split-row .split-monto-wrap{grid-column:1;}.split-row .remove-btn{grid-column:2;grid-row:2;align-self:center;}}
 .split-row input,.split-row select{margin:0;}
 .split-monto-wrap{position:relative;}
 .split-monto-wrap .peso-sign{position:absolute;left:0.7rem;top:50%;transform:translateY(-50%);color:var(--accent);font-weight:700;font-size:0.9rem;pointer-events:none;font-family:'DM Mono',monospace;}
@@ -534,21 +537,56 @@ function toggleSplit() {
 function addSplitRow() {
   const c=document.getElementById('split-rows');
   const d=document.createElement('div'); d.className='split-row';
+  const idx = c.children.length;
   d.innerHTML=`
-    <select onchange="updateRemaining()" style="grid-column:1/-1">${'<option value="">— Seleccioná sucursal —</option>'+SUCURSALES.map(s=>`<option>${s}</option>`).join('')}</select>
-    <div class="split-monto-wrap"><span class="peso-sign">$</span><input type="number" placeholder="0.00" min="0" step="0.01" oninput="updateRemaining()" style="text-align:right"></div>
+    <select onchange="updateRemaining()" style="grid-column:1/-1"><option value="">— Seleccioná sucursal —</option>${SUCURSALES.map(s=>`<option>${s}</option>`).join('')}</select>
+    <div class="split-pct-wrap"><input type="number" placeholder="0" min="0" max="100" step="0.1" oninput="onPctInput(this)" style="text-align:right"><span class="pct-sign">%</span></div>
+    <div class="split-monto-wrap"><span class="peso-sign">$</span><input type="number" placeholder="0.00" min="0" step="0.01" oninput="onMontoRowInput(this)" style="text-align:right"></div>
     <button class="remove-btn" onclick="removeRow(this)">×</button>`;
   c.appendChild(d);
 }
+
+function onPctInput(pctInp){
+  const row = pctInp.closest('.split-row');
+  const montoInp = row.querySelector('.split-monto-wrap input');
+  const total = parseFloat(document.getElementById('monto').value)||0;
+  const pct = parseFloat(pctInp.value)||0;
+  if(total > 0) montoInp.value = (total * pct / 100).toFixed(2);
+  updateRemaining();
+}
+
+function onMontoRowInput(montoInp){
+  const row = montoInp.closest('.split-row');
+  const pctInp = row.querySelector('.split-pct-wrap input');
+  const total = parseFloat(document.getElementById('monto').value)||0;
+  const monto = parseFloat(montoInp.value)||0;
+  if(total > 0) pctInp.value = (monto / total * 100).toFixed(1);
+  updateRemaining();
+}
 function removeRow(btn) { btn.closest('.split-row').remove(); updateRemaining(); }
-function onMontoChange() { updateRemaining(); }
+function onMontoChange() {
+  // Recalcular montos de filas que tienen % cargado
+  const total = parseFloat(document.getElementById('monto').value)||0;
+  document.querySelectorAll('#split-rows .split-row').forEach(r=>{
+    const pctInp = r.querySelector('.split-pct-wrap input');
+    const montoInp = r.querySelector('.split-monto-wrap input');
+    if(!pctInp || !montoInp) return;
+    const pct = parseFloat(pctInp.value)||0;
+    if(pct > 0 && total > 0) montoInp.value = (total * pct / 100).toFixed(2);
+  });
+  updateRemaining();
+}
 function updateRemaining() {
   const total=parseFloat(document.getElementById('monto').value)||0;
   let assigned=0;
-  document.querySelectorAll('#split-rows .split-row').forEach(r=>{assigned+=parseFloat(r.querySelector('input').value)||0;});
+  document.querySelectorAll('#split-rows .split-row').forEach(r=>{
+    const montoInp = r.querySelector('.split-monto-wrap input');
+    assigned+=parseFloat(montoInp ? montoInp.value : 0)||0;
+  });
   const rem=total-assigned;
+  const pctAsig = total>0 ? (assigned/total*100).toFixed(1) : 0;
   const b=document.getElementById('remaining-badge');
-  b.textContent='Restante: $'+fmt(rem);
+  b.textContent='Restante: $'+fmt(rem)+' ('+pctAsig+'% asignado)';
   b.className='remaining-badge '+(Math.abs(rem)<0.01?'ok':(rem<0?'over':''));
 }
 
@@ -636,7 +674,9 @@ async function guardarGasto() {
       const rows=document.querySelectorAll('#split-rows .split-row');
       let total=0; const splits=[];
       for(const r of rows){
-        const suc=r.querySelector('select').value, m=parseFloat(r.querySelector('input').value);
+        const suc=r.querySelector('select').value;
+        const montoInp=r.querySelector('.split-monto-wrap input');
+        const m=parseFloat(montoInp ? montoInp.value : 0);
         if(!suc||!m||m<=0){ hideLoading(); btn.disabled=false; return showToast('Completá todas las sucursales y montos','error'); }
         splits.push({suc,m}); total+=m;
       }
