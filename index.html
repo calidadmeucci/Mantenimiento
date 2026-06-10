@@ -48,12 +48,12 @@ select option{background:var(--surface2);}
 .remaining-badge{font-family:'DM Mono',monospace;font-size:0.82rem;padding:0.22rem 0.7rem;border-radius:20px;background:var(--surface);border:1px solid var(--border);}
 .remaining-badge.ok{color:var(--green);border-color:var(--green);}
 .remaining-badge.over{color:var(--red);border-color:var(--red);}
-.split-row{display:grid;grid-template-columns:1fr 80px 1fr 36px;gap:0.5rem;align-items:center;margin-bottom:0.7rem;row-gap:0.4rem;}
+.split-row{display:grid;grid-template-columns:110px 1fr 36px;gap:0.5rem;align-items:center;margin-bottom:0.7rem;row-gap:0.4rem;}
 .split-row select{grid-column:1/-1;}
 .split-pct-wrap{position:relative;}
 .split-pct-wrap .pct-sign{position:absolute;right:0.6rem;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600;font-size:0.82rem;pointer-events:none;}
 .split-pct-wrap input{padding-right:1.4rem;text-align:right;}
-@media(max-width:520px){.split-row{grid-template-columns:1fr 36px;row-gap:0.4rem;}.split-row select{grid-column:1/-1;}.split-row .split-pct-wrap{grid-column:1;}.split-row .split-monto-wrap{grid-column:1;}.split-row .remove-btn{grid-column:2;grid-row:2;align-self:center;}}
+@media(max-width:520px){.split-row{grid-template-columns:90px 1fr 36px;}.split-row select{grid-column:1/-1;}}
 .split-row input,.split-row select{margin:0;}
 .split-monto-wrap{position:relative;}
 .split-monto-wrap .peso-sign{position:absolute;left:0.7rem;top:50%;transform:translateY(-50%);color:var(--accent);font-weight:700;font-size:0.9rem;pointer-events:none;font-family:'DM Mono',monospace;}
@@ -158,7 +158,8 @@ tr:last-child td{border-bottom:none;}
 .month-chip:hover:not(.active){border-color:var(--accent);color:var(--accent);}
 /* REGISTROS */
 .reg-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.8rem;}
-.reg-actions{display:flex;gap:0.5rem;flex-wrap:wrap;}
+.reg-actions{display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;}
+.sel-total{display:flex;align-items:center;gap:0.35rem;padding:0.5rem 0.9rem;background:rgba(240,192,64,0.12);border:1px solid var(--accent);border-radius:8px;color:var(--accent);font-size:0.85rem;font-weight:700;white-space:nowrap;}
 .btn-sec{padding:0.5rem 1rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.83rem;cursor:pointer;transition:all 0.2s;}
 .btn-sec:hover{border-color:var(--accent);color:var(--accent);}
 .btn-pdf{padding:0.5rem 1rem;background:var(--accent);border:none;border-radius:8px;color:#0f0f11;font-family:'DM Sans',sans-serif;font-size:0.83rem;font-weight:700;cursor:pointer;}
@@ -179,7 +180,20 @@ tr:last-child td{border-bottom:none;}
 .lightbox.open{display:flex;}
 .lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;}
 .lightbox-close{position:fixed;top:1.5rem;right:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:50%;width:36px;height:36px;color:var(--text);cursor:pointer;font-size:1.3rem;display:flex;align-items:center;justify-content:center;}
-@media(max-width:700px){.two-col,.row2,.row3{grid-template-columns:1fr;}.reg-row{grid-template-columns:36px 80px 1fr 80px 36px;}}
+@media(max-width:700px){.two-col,.row2,.row3{grid-template-columns:1fr;}
+.reg-row{grid-template-columns:32px minmax(0,1fr) auto 40px;grid-template-rows:auto auto;row-gap:0.35rem;padding:0.7rem 0.7rem;}
+.reg-row>span:nth-child(1){grid-column:1;grid-row:1/3;align-self:center;}
+.reg-row>span:nth-child(3){grid-column:2;grid-row:1;min-width:0;}
+.reg-row>span:nth-child(5){grid-column:3;grid-row:1;justify-self:end;font-weight:600;white-space:nowrap;}
+.reg-row>span:nth-child(7){grid-column:4;grid-row:1;justify-self:end;}
+.reg-row>span:nth-child(2){grid-column:2;grid-row:2;}
+.reg-row>span:nth-child(4){grid-column:3;grid-row:2;justify-self:end;min-width:0;}
+.reg-row>span:nth-child(6){grid-column:4;grid-row:2;justify-self:end;}
+.reg-row.header{grid-template-columns:32px 1fr;grid-template-rows:auto;}
+.reg-row.header>span:nth-child(1){grid-row:1;}
+.reg-row.header>span:nth-child(3){grid-column:2;grid-row:1;}
+.reg-row.header>span:nth-child(2),.reg-row.header>span:nth-child(4),.reg-row.header>span:nth-child(5),.reg-row.header>span:nth-child(6),.reg-row.header>span:nth-child(7){display:none;}
+}
 </style>
 </head>
 <body>
@@ -399,6 +413,7 @@ tr:last-child td{border-bottom:none;}
       <div class="dash-subtitle" id="sel-count">Seleccioná registros para exportar</div>
     </div>
     <div class="reg-actions">
+      <div id="sel-total" class="sel-total" style="display:none">Total sel.: <span class="mono" id="sel-total-val">$0,00</span></div>
       <input type="month" id="r-mes" onchange="renderRegistros()" style="padding:0.48rem 0.85rem;font-size:0.83rem;">
       <select id="r-sucursal" onchange="renderRegistros()" style="width:auto;padding:0.48rem 0.85rem;font-size:0.83rem;">
         <option value="">Todas las sucursales</option>
@@ -953,7 +968,15 @@ function toggleSel(id,chk){
 }
 function selectAll(){ filteredRegistros().forEach(g=>selectedIds.add(g.id)); renderRegistros(); }
 function clearSel(){ selectedIds.clear(); renderRegistros(); }
-function updateSelCount(){ document.getElementById('sel-count').textContent=selectedIds.size>0?`${selectedIds.size} registro(s) seleccionado(s)`:'Seleccioná registros para exportar'; }
+function updateSelCount(){
+  document.getElementById('sel-count').textContent=selectedIds.size>0?`${selectedIds.size} registro(s) seleccionado(s)`:'Seleccioná registros para exportar';
+  const box=document.getElementById('sel-total');
+  if(selectedIds.size>0){
+    const suma=gastos.filter(g=>selectedIds.has(g.id)).reduce((a,g)=>a+(parseFloat(g.monto)||0),0);
+    document.getElementById('sel-total-val').textContent='$'+fmt(suma);
+    box.style.display='flex';
+  } else { box.style.display='none'; }
+}
 function toggleAll(chk){ chk.checked?selectAll():clearSel(); }
 function toggleAllCustom(){
   const chk=document.getElementById('chk-all');
